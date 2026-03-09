@@ -27,11 +27,16 @@ def ask_question(text, question):
 )
     return response
 
-    
+
+def parse_output(response):
+    answer = response.output[0].content[0].text
+    return answer
+
 if __name__ == "__main__":
     get_API_Key()
-    output = ask_question(
+    response = ask_question(
         read_file("test_document.pdf"),
         "Summarize the content of the following document"
 )
-    print(output)
+    answer = parse_output(response)
+    print(answer)
