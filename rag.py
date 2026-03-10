@@ -15,4 +15,11 @@ def index_document(file_path, collection):
     collection.add(
         ids = ids,
         documents = chunks
-    ) 
+    )
+
+def query_collection(question, collection):
+    result = collection.query(
+        query_texts = [question],
+        n_results = 5 
+    )
+    return result["documents"][0]
