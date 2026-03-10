@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 import fitz
 from openai import OpenAI
+from utils import read_file
 
 def get_API_Key():
     load_dotenv()
@@ -11,13 +12,6 @@ def get_API_Key():
     else: 
         return key
 
-def read_file(file_path):
-    text = ""
-    with fitz.open(file_path) as doc:
-        for page in doc: 
-            text += page.get_text()
-    return text
-
 def parse_output(response):
     answer = response.output[0].content[0].text
     return answer
@@ -26,7 +20,7 @@ def ask_question(text, question, provider = "OpenAI"):
     if provider == "Ollama":
         client = OpenAI(
         base_url='http://localhost:11434/v1/',
-        api_key='ollama',  # required but ignored
+        api_key='ollama',
 )
         response = client.chat.completions.create(
             messages=[
