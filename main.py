@@ -3,6 +3,7 @@ import os
 import fitz
 from openai import OpenAI
 from utils import read_file
+import rag
 
 def get_API_Key():
     load_dotenv()
@@ -45,10 +46,15 @@ def ask_question(text, question, provider = "OpenAI"):
 if __name__ == "__main__":
     get_API_Key()
     provider_choice = input("Please select provider (OpenAI or Ollama)")
+    question = input("What is your question regarding this document?")
+    collection = rag.init_db()
+    rag.index_document("skript (4).pdf", collection)
+    important_chunks = rag.query_collection(question, collection)
     response = ask_question(
-        read_file("test_document.pdf"),
-        "Summarize the content of the following document",
+        "\n".join(important_chunks),
+        question,
         provider_choice
 )
     print(response)
+    
     
