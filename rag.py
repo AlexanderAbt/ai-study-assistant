@@ -3,11 +3,13 @@ import chromadb
 from utils import read_file
 
 
-def init_db():
-    client = chromadb.Client()
-    return client.create_collection(name="chunks_collection")
+def init_db(file_path):
+    client = chromadb.PersistentClient(path = "chroma_db/")
+    return client.get_or_create_collection(name=file_path)
 
 def index_document(file_path, collection):
+    if collection.count() > 0:
+        return
     text = read_file(file_path)
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=50)
     chunks = text_splitter.split_text(text)

@@ -47,8 +47,8 @@ if __name__ == "__main__":
     get_API_Key()
     provider_choice = input("Please select provider (OpenAI or Ollama)")
     question = input("What is your question regarding this document?")
-    collection = rag.init_db()
-    rag.index_document("skript (4).pdf", collection)
+    collection = rag.init_db("skript.pdf")
+    rag.index_document("skript.pdf", collection)
     important_chunks = rag.query_collection(question, collection)
     response = ask_question(
         "\n".join(important_chunks),
