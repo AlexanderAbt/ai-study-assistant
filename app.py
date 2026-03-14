@@ -8,30 +8,41 @@ provider = st.selectbox("Model", ["OpenAI", "Ollama"])
 file = st.file_uploader("File you want to use", "pdf")
 question = st.chat_input("What is your question?")
 
-def chat_history():
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-
-with tempfile.NamedTemporaryFile(delete = False, suffix = ".pdf") as tmp: 
-    tmp.write(file.read())
-    tmp_path = tmp.name
-if file != None and question != None:
-    chat_history()
+def get_important_chunks(file, question): 
     collection_name = file.name
     get_API_Key()
     collection = rag.init_db(collection_name)
     rag.index_document(collection_name, collection)
-    important_chunks = rag.query_collection(question, collection)
+    return rag.query_collection(question, collection)
+
+if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+if question is not None:
+    if file is not None:
+        with tempfile.NamedTemporaryFile(delete = False, suffix = ".pdf") as tmp: 
+            tmp.write(file.read())
+            tmp_path = tmp.name
+        important_chunks = get_important_chunks(file, question)
+
+    if file is None:
+        important_chunks = []
+
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    st.session_state.messages.append({"role": "user", "content": question})
+    get_API_Key()
     with st.spinner("Wait for it..."):
         response = ask_question(
         "\n".join(important_chunks),
-        question + "Give the answer in Markdown format",
+        question,
         provider
 )
-        st.success("Done!")
+    st.success("Done!")
 
     st.markdown(response)
-    os.unlink(tmp_path)
+    st.session_state.messages.append({"role": "assistant", "content": response})
+    if file is not None: 
+        os.unlink(tmp_path)
