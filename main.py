@@ -17,20 +17,16 @@ def parse_output(response):
     answer = response.output[0].content[0].text
     return answer
 
-def ask_question(text, question, provider = "OpenAI"):
+def ask_question(text, message, provider = "OpenAI"):
+    chat_messages =[{"role": "system", "content": f"Answer based on this context: {text}"}] + message
     if provider == "Ollama":
         client = OpenAI(
         base_url='http://localhost:11434/v1/',
         api_key='ollama',
 )
         response = client.chat.completions.create(
-            messages=[
-                {
-                    'role': 'user',
-                    'content': text + question,
-                }
-            ],
-        model='llama3.2',
+            messages = chat_messages,
+            model='llama3.2',
 )
         return response.choices[0].message.content
 
@@ -38,7 +34,7 @@ def ask_question(text, question, provider = "OpenAI"):
         client = OpenAI()
         response = client.responses.create(
             model="gpt-4o-mini",
-            input= text + question 
+            input = chat_messages
 )
 
         return parse_output(response)

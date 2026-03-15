@@ -18,6 +18,11 @@ def get_important_chunks(file, question):
 if "messages" not in st.session_state:
         st.session_state.messages = []
 
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
 if question is not None:
     if file is not None:
         with tempfile.NamedTemporaryFile(delete = False, suffix = ".pdf") as tmp: 
@@ -28,21 +33,17 @@ if question is not None:
     if file is None:
         important_chunks = []
 
-    # Display chat messages from history on app rerun
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
     st.session_state.messages.append({"role": "user", "content": question})
     get_API_Key()
     with st.spinner("Wait for it..."):
         response = ask_question(
         "\n".join(important_chunks),
-        question,
+        st.session_state.messages,
         provider
 )
     st.success("Done!")
-
     st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
+    print("Messages:", st.session_state.messages)
     if file is not None: 
         os.unlink(tmp_path)
