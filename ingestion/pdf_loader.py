@@ -1,4 +1,8 @@
 import fitz
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+import os
 
 def read_file(file_path):
     text = ""
