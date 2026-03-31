@@ -33,24 +33,44 @@ if question:
     important_chunks = []
     temp_paths = []
     all_metadatas = []
+    if not files: 
+        st.warning("Please upload a file")
+        st.stop()
     if files:
         for file in files:
-            tmp_path = safe_uploaded_file(file)
-            temp_paths.append(tmp_path)
-            collection = get_collection(file.name)
-            index_document(tmp_path, collection, file.name)
-            chunks, metadatas = retrieve_chunks(question, collection)
-            important_chunks.extend(chunks)
-            all_metadatas.extend(metadatas)
+            try: 
+                tmp_path = safe_uploaded_file(file)
+                temp_paths.append(tmp_path)
+                collection = get_collection(file.name)
+                index_document(tmp_path, collection, file.name)
+                chunks, metadatas = retrieve_chunks(question, collection)
+                important_chunks.extend(chunks)
+                all_metadatas.extend(metadatas)
+            except ValueError as e:
+                st.error(str(e)) 
+            except FileNotFoundError as e:
+                st.error(str(e)) 
+            except Exception as e: 
+                st.error(f"Unexpected error ocurred: {e}")
 
     st.session_state.messages.append({"role": "user", "content": question})
 
-    with st.spinner("Wait for it..."):
-        response = ask_llm(
-        "\n".join(important_chunks),
-        st.session_state.messages,
-        provider
+    try:
+        with st.spinner("Wait for it..."):
+            response = ask_llm(
+            "\n".join(important_chunks),
+            st.session_state.messages,
+            provider
 )
+    except ValueError as e: 
+        st.error(str(e))
+        st.stop()
+    except ConnectionError as e: 
+        st.error(str(e))
+        st.stop()
+    except Exception as e: 
+        st.error(f"Unexpected error occured: {e}")
+        st.stop()
     with st.chat_message("assistant"):
         st.markdown(response)
         if all_metadatas: 
