@@ -10,7 +10,7 @@ from retrieval.retriever import retrieve_chunks
 from llm.client import ask_llm
 
 
-def safe_uploaded_file(file):
+def safe_uploaded_file(file: UploadedFile)-> str:
     with tempfile.NamedTemporaryFile(delete = False, suffix = ".pdf") as tmp: 
         tmp.write(file.read())
         return tmp.name
