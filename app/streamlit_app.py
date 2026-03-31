@@ -8,15 +8,27 @@ from retrieval.vector_store import get_collection
 from ingestion.indexer import index_document
 from retrieval.retriever import retrieve_chunks
 from llm.client import ask_llm
+from streamlit.runtime.uploaded_file_manager import UploadedFile
+import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)-8s %(name)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("app.log")
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 def safe_uploaded_file(file: UploadedFile)-> str:
-    with tempfile.NamedTemporaryFile(delete = False, suffix = ".pdf") as tmp: 
+    logger.info(f"Saving {file} as temporary file")
+    with tempfile.NamedTemporaryFile(delete = False, suffix = ".pdf") as tmp:
         tmp.write(file.read())
         return tmp.name
 
 st.title("RAG Learning Assistant")
-
 provider = st.selectbox("Model", ["OpenAI", "Ollama"])
 files = st.file_uploader("Upload PDF files", type= "pdf", accept_multiple_files = True)
 question = st.chat_input("What is your question?")
@@ -47,10 +59,13 @@ if question:
                 important_chunks.extend(chunks)
                 all_metadatas.extend(metadatas)
             except ValueError as e:
+                logger.error(f"Value Error occured: {e}")
                 st.error(str(e)) 
             except FileNotFoundError as e:
+                logger.error(f"FileNotFoundError occured: {e}")
                 st.error(str(e)) 
             except Exception as e: 
+                logger.error(f"Error occured: {e}")
                 st.error(f"Unexpected error ocurred: {e}")
 
     st.session_state.messages.append({"role": "user", "content": question})
@@ -63,16 +78,19 @@ if question:
             provider
 )
     except ValueError as e: 
+        logger.error(f"Value Error occured: {e}")
         st.error(str(e))
         st.stop()
     except ConnectionError as e: 
+        logger.error(f"Connection error occured: {e}")
         st.error(str(e))
         st.stop()
     except Exception as e: 
+        logger.error(f"Unexpected error occured: {e}")
         st.error(f"Unexpected error occured: {e}")
         st.stop()
     with st.chat_message("assistant"):
-        st.markdown(response)
+        logger.info(f"Showing response: {response[:50]}")
         if all_metadatas: 
             sources = []
             for i, m in enumerate(all_metadatas):
@@ -81,8 +99,10 @@ if question:
             source_answer = "**Sources:**\n\n" + "\n""\n".join(sources)
             response = response + "\n" + source_answer
             st.markdown(response)
+        else: 
+            st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
-    print("Messages:", st.session_state.messages)
+    logger.debug(f"Messages: {st.session_state.messages}")
 
     for tmp_path in temp_paths:
         os.unlink(tmp_path)
