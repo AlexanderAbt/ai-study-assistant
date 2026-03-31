@@ -32,13 +32,16 @@ for message in st.session_state.messages:
 if question:
     important_chunks = []
     temp_paths = []
+    all_metadatas = []
     if files:
         for file in files:
             tmp_path = safe_uploaded_file(file)
             temp_paths.append(tmp_path)
             collection = get_collection(file.name)
-            index_document(tmp_path, collection)
-            important_chunks.extend(retrieve_chunks(question, collection))
+            index_document(tmp_path, collection, file.name)
+            chunks, metadatas = retrieve_chunks(question, collection)
+            important_chunks.extend(chunks)
+            all_metadatas.extend(metadatas)
 
     st.session_state.messages.append({"role": "user", "content": question})
 
@@ -50,6 +53,14 @@ if question:
 )
     with st.chat_message("assistant"):
         st.markdown(response)
+        if all_metadatas: 
+            sources = []
+            for i, m in enumerate(all_metadatas):
+                source_line = "[" + str(i+1) + "] " + m['source'] + ", Page " + str(m['page'])
+                sources.append(source_line)
+            source_answer = "**Sources:**\n\n" + "\n""\n".join(sources)
+            response = response + "\n" + source_answer
+            st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
     print("Messages:", st.session_state.messages)
 
