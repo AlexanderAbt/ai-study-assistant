@@ -4,6 +4,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import os
 import chromadb
 
-def get_collection(file_path):
+def get_collection(file_path: str) -> chromadb.Collection:
     client = chromadb.PersistentClient(path = "chroma_db/")
     return client.get_or_create_collection(file_path)

@@ -6,7 +6,7 @@ import chromadb
 from ingestion.pdf_loader import read_file
 import os
 
-def split_text(file_path, collection):
+def split_text(file_path : str, collection : chromadb.Collection) -> str:
     if collection.count() > 0:
         return
     text = read_file(os.path.basename(file_path))

@@ -4,8 +4,9 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config.settings import DEFAULT_MODEL, OLLAMA_MODEL, OLLAMA_BASE_URL, OPENAI_API_KEY
 from llm.prompts import build_system_prompt
+import openai
 
-def ask_llm(context: str, messages: list[dict], provider: str = "OpenAI"):
+def ask_llm(context: str, messages: list[dict], provider: str = "OpenAI") -> str:
     system_prompt = build_system_prompt(context)
     chat_messages =[{"role": "system", "content": system_prompt}] + messages
     if provider == "Ollama":
@@ -13,17 +14,27 @@ def ask_llm(context: str, messages: list[dict], provider: str = "OpenAI"):
         base_url=OLLAMA_BASE_URL,
         api_key='ollama',
 )
-        response = client.chat.completions.create(
-            messages = chat_messages,
-            model=OLLAMA_MODEL,
+        try: 
+            response = client.chat.completions.create(
+                messages = chat_messages,
+                model=OLLAMA_MODEL,
 )
+        except openai.APIConnectionError:
+            raise ConnectionError("Couldn't connect to Ollama. Is it running? Use 'ollama serve' ") 
+
         return response.choices[0].message.content
 
     else: 
-        client = OpenAI(api_key= OPENAI_API_KEY)
-        response = client.chat.completions.create(
-            model=DEFAULT_MODEL,
-            messages = chat_messages
+        if not OPENAI_API_KEY:
+            raise ValueError("API key is missing")
+        try:
+            client = OpenAI(api_key= OPENAI_API_KEY)
+            response = client.chat.completions.create(
+                model=DEFAULT_MODEL,
+                messages = chat_messages
 )
-
+        except openai.AuthenticationError:
+            raise ValueError("Invalid API key")
+        except openai.APIConnectionError:
+            raise ConnectionError("Could not connect to OpenAI")
         return response.choices[0].message.content
